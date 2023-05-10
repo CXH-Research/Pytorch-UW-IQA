@@ -28,12 +28,11 @@ def uciqe(image):
     uciqe = 0.4680 * delta + 0.2745 * conl + 0.2576 * mu
     return uciqe
 
-def torch_uciqe(image):
-    img = Image.open(image)
-    img = to_tensor(img).cuda()
+# improve the following code to support batch operation:
 
+def torch_uciqe(image):
     # RGB转为HSV
-    hsv = color.rgb_to_hsv(img)  
+    hsv = color.rgb_to_hsv(image)  
     H, S, V = torch.chunk(hsv, 3)
 
     # 色度的标准差
@@ -54,4 +53,15 @@ def torch_uciqe(image):
     top = torch.sum(v[:number]) / number
     conl = top - bottom
     uciqe = 0.4680 * delta + 0.2745 * conl + 0.2576 * mu
-    return uciqe.item()
+    return uciqe
+
+if __name__ == '__main__':
+    image = 'test.png'
+    img = Image.open(image).convert('RGB')
+    img = to_tensor(img).cuda().unsqueeze(0)
+    img = torch.cat((img, img), 0)
+    print(img.shape)
+    res = torch.stack([torch_uciqe(res) for res in img], dim=0)
+    print(res.shape)
+    print(res)
+    

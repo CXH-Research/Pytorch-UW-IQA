@@ -5,7 +5,6 @@ import os
 from torchvision.transforms.functional import to_tensor
 import math
 import time
-import numpy as np
 
 sobel_kernel_x = torch.tensor(
     [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32).reshape(1, 1, 3, 3)
@@ -230,12 +229,8 @@ def sobel_torch(x):
 
 # Replace all instances of torch with torch and ndimage.sobel with sobel_torch in the original code
 # Also, convert the image to tensor at the beginning and back to NumPy array at the end of the function
-
-
-def getUIQM(x):
-    x = Image.open(x).convert('RGB')
-    x = to_tensor(x) * 255
-    x = x.cuda()
+def torch_uiqm(x):
+    x *= 255
     c1 = 0.0282
     c2 = 0.2953
     c3 = 3.5753
@@ -243,8 +238,14 @@ def getUIQM(x):
     uism = _uism(x)
     uiconm = _uiconm(x, 10)
     uiqm = (c1*uicm) + (c2*uism) + (c3*uiconm)
-    return uiqm.item()
+    return uiqm
 
 
 if __name__ == '__main__':
-    getUIQM('test.png')
+    x = Image.open('test.png').convert('RGB')
+    x = to_tensor(x).cuda().unsqueeze(0)
+    x = torch.cat((x, x), 0)
+    print(x.shape)
+    res = torch.stack([torch_uiqm(res) for res in x], dim=0)
+    print(res.shape)
+    print(res)
